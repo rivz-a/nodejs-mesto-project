@@ -1,8 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import router from "./routes/index";
-import userRouter from "./routes/users";
-import cardRouter from "./routes/cards";
+import helmet from 'helmet';
 import type { AuthContext } from "./types/auth-context";
 
 const { PORT = 3000, MONGO_URL = "mongodb://localhost:27017/mestodb" } =
@@ -10,9 +9,9 @@ const { PORT = 3000, MONGO_URL = "mongodb://localhost:27017/mestodb" } =
 
 const app = express();
 
-app.use(router);
-
 app.use(express.json());
+
+app.use(helmet());
 
 app.use(
   (req: Request, res: Response<unknown, AuthContext>, next: NextFunction) => {
@@ -24,8 +23,7 @@ app.use(
   }
 );
 
-app.use("/users", userRouter);
-app.use("/cards", cardRouter);
+app.use(router);
 
 mongoose.connect(MONGO_URL);
 

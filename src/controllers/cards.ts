@@ -5,9 +5,11 @@ import type { AuthContext } from "../types/auth-context";
 const BAD_REQUEST_CODE = 400;
 const NOT_FOUND_CODE = 404;
 const SERVER_ERROR_CODE = 500;
+const CREATED_CODE = 201;
 
 export const getAllCards = (req: Request, res: Response) => {
   return Card.find({})
+    .orFail()
     .then((cards) => {
       res.json(cards);
     })
@@ -20,6 +22,7 @@ export const getAllCards = (req: Request, res: Response) => {
 
 export const deleteCardById = (req: Request, res: Response) => {
   Card.findByIdAndDelete(req.params.cardId)
+    .orFail()
     .then(() => {
       res.status(204).send();
     })
@@ -36,7 +39,7 @@ export const createCard = (req: Request, res: Response<unknown, AuthContext>) =>
   const owner = res.locals.user._id;
 
   return Card.create({ name, link, owner })
-    .then((card) => res.send({ data: card }))
+    .then((card) => res.status(CREATED_CODE).send({ data: card }))
     .catch((err) => {
       if (err.name === "ValidationError")
         return res
@@ -58,6 +61,7 @@ export const likeCard = (req: Request, res: Response<unknown, AuthContext>) => {
     { $addToSet: { likes: userId } },
     { new: true }
   )
+    .orFail()
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.name === "ValidationError")
@@ -84,6 +88,7 @@ export const dislikeCard = (req: Request, res: Response<unknown, AuthContext>) =
     { $pull: { likes: userId } },
     { new: true }
   )
+    .orFail()
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.name === "ValidationError")

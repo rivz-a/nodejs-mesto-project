@@ -6,5 +6,8 @@ const router = Router();
 
 router.use("/users", usersRouter);
 router.use("/cards", cardsRouter);
+router.use('*', (req, res) => {
+  res.status(404).json({ message: 'Not found' });
+});
 
 export default router;

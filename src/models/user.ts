@@ -1,7 +1,10 @@
 import mongoose from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
+
 import type { IUser, UserModel } from "../types/user";
+
+import AuthenticationError from "../errors/authentication-error"
 
 const userSchema = new mongoose.Schema(
   {
@@ -60,12 +63,16 @@ userSchema.static(
       .select("+password")
       .then((user: IUser) => {
         if (!user) {
-          return Promise.reject(new Error("Неправильные почта или пароль"));
+          return Promise.reject(
+            new AuthenticationError("Неправильные почта или пароль")
+          );
         }
 
         return bcrypt.compare(password, user.password).then((matched) => {
           if (!matched) {
-            return Promise.reject(new Error("Неправильные почта или пароль"));
+            return Promise.reject(
+              new AuthenticationError("Неправильные почта или пароль")
+            );
           }
 
           return user;

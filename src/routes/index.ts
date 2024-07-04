@@ -3,6 +3,8 @@ import usersRouter from "./users";
 import cardsRouter from "./cards";
 import { login, createUser } from "../controllers/users";
 
+import NotFoundError from "../errors/not-found-error";
+
 import auth from "../middlewares/auth";
 import { celebrate, Joi } from "celebrate";
 
@@ -26,7 +28,7 @@ router.post(
       password: Joi.string().required(),
       name: Joi.string().min(2).max(30),
       about: Joi.string().min(2).max(200),
-      avatar: Joi.string(),
+      avatar: Joi.string().uri(),
     }),
   }),
   createUser
@@ -37,8 +39,8 @@ router.use(auth);
 router.use("/users", usersRouter);
 router.use("/cards", cardsRouter);
 
-router.use("*", (req, res) => {
-  res.status(404).json({ message: "Not found" });
+router.use("*", (req, res, next) => {
+  next(new NotFoundError({ message: "Not found" }))
 });
 
 export default router;

@@ -6,13 +6,11 @@ import jwt from "jsonwebtoken";
 import type { IUser } from "../types/user";
 
 import { Error as MongooseError } from "mongoose";
-import {
-  NotFoundError,
-  BadRequestError,
-  AuthenticationError,
-  ConflictError
-} from "../errors/error";
 import { constants } from "http2";
+
+import NotFoundError from "../errors/not-found-error";
+import BadRequestError from "../errors/bad-request-error";
+import ConflictError from "../errors/conflict-error";
 
 const DUPLICATE_KEY_ERROR_CODE = "E11000";
 
@@ -34,7 +32,7 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
       res.send({ token });
     })
     .catch((error) => {
-      return next(new AuthenticationError(error.message));
+      return next(error);
     });
 };
 

@@ -1,8 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import Card from "../models/card";
-import { NotFoundError, BadRequestError } from "../errors/error";
 import { Error as MongooseError } from "mongoose";
 import { constants } from "http2";
+
+import NotFoundError from "../errors/not-found-error";
+import BadRequestError from "../errors/bad-request-error";
+import ForbiddenError from "../errors/forbidden-error";
 
 export const getAllCards = (
   req: Request,
@@ -19,25 +22,32 @@ export const getAllCards = (
     });
 };
 
-export const deleteCardById = (
+export const deleteCardById = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  Card.findByIdAndDelete(req.params.cardId)
-    .orFail(() => new NotFoundError("Карточка не найдена"))
-    .then(() => {
-      res.status(constants.HTTP_STATUS_CREATED).send();
-    })
-    .catch((error) => {
-      if (error instanceof MongooseError.CastError) {
-        return next(
-          new BadRequestError("Карточка с указанным _id не найдена.")
-        );
-      }
+  try {
+    const card = await Card.findById(req.params.cardId).orFail(
+      () => new NotFoundError("Карточка не найдена")
+    );
 
-      return next(error);
-    });
+    if (req.params.userId !== card.owner.toString()) {
+      return next(new ForbiddenError("Нет доступа"));
+    }
+
+    await Card.findByIdAndDelete(req.params.cardId).orFail(
+      () => new NotFoundError("Карточка не найдена")
+    );
+
+    res.status(constants.HTTP_STATUS_CREATED).send();
+  } catch (error) {
+    if (error instanceof MongooseError.CastError) {
+      return next(new BadRequestError("Карточка с указанным _id не найдена."));
+    }
+
+    next(error);
+  }
 };
 
 export const createCard = (req: Request, res: Response, next: NextFunction) => {
@@ -45,7 +55,9 @@ export const createCard = (req: Request, res: Response, next: NextFunction) => {
   const owner = req.params.userId;
 
   return Card.create({ name, link, owner })
-    .then((card) => res.status(constants.HTTP_STATUS_CREATED).send({ data: card }))
+    .then((card) =>
+      res.status(constants.HTTP_STATUS_CREATED).send({ data: card })
+    )
     .catch((error) => {
       if (error instanceof MongooseError.ValidationError) {
         return next(

@@ -1,8 +1,11 @@
-import express, { Request, Response, NextFunction } from "express";
+import express from "express";
 import mongoose from "mongoose";
+
 import router from "./routes/index";
 import helmet from 'helmet';
-import type { AuthContext } from "./types/auth-context";
+
+import errorHandler from "./middlewares/error";
+import { requestLogger, errorLogger } from './middlewares/logger';
 
 const { PORT = 3000, MONGO_URL = "mongodb://localhost:27017/mestodb" } =
   process.env;
@@ -13,17 +16,13 @@ app.use(express.json());
 
 app.use(helmet());
 
-app.use(
-  (req: Request, res: Response<unknown, AuthContext>, next: NextFunction) => {
-    res.locals.user = {
-      _id: "6682e2a58d91bc9ae4754631",
-    };
-
-    next();
-  }
-);
+app.use(requestLogger);
 
 app.use(router);
+
+app.use(errorLogger);
+
+app.use(errorHandler)
 
 mongoose.connect(MONGO_URL);
 

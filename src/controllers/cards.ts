@@ -1,59 +1,66 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import Card from "../models/card";
-import type { AuthContext } from "../types/auth-context";
+import { NotFoundError, BadRequestError } from "../errors/error";
+import { Error as MongooseError } from "mongoose";
+import { constants } from "http2";
 
-const BAD_REQUEST_CODE = 400;
-const NOT_FOUND_CODE = 404;
-const SERVER_ERROR_CODE = 500;
-const CREATED_CODE = 201;
-
-export const getAllCards = (req: Request, res: Response) => {
+export const getAllCards = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   return Card.find({})
-    .orFail()
+    .orFail(() => new NotFoundError("Карточка не найдена"))
     .then((cards) => {
       res.json(cards);
     })
-    .catch(() => {
-      res
-        .status(SERVER_ERROR_CODE)
-        .json({ message: "Ошибка по умолчанию." });
+    .catch((error) => {
+      next(error);
     });
 };
 
-export const deleteCardById = (req: Request, res: Response) => {
+export const deleteCardById = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   Card.findByIdAndDelete(req.params.cardId)
-    .orFail()
+    .orFail(() => new NotFoundError("Карточка не найдена"))
     .then(() => {
-      res.status(204).send();
+      res.status(constants.HTTP_STATUS_CREATED).send();
     })
-    .catch((err) => {
-      if (err.name === "DocumentNotFoundError")
-        res
-          .status(NOT_FOUND_CODE)
-          .json({ message: "Карточка с указанным _id не найдена." });
+    .catch((error) => {
+      if (error instanceof MongooseError.CastError) {
+        return next(
+          new BadRequestError("Карточка с указанным _id не найдена.")
+        );
+      }
+
+      return next(error);
     });
 };
 
-export const createCard = (req: Request, res: Response<unknown, AuthContext>) => {
+export const createCard = (req: Request, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
-  const owner = res.locals.user._id;
+  const owner = req.params.userId;
 
   return Card.create({ name, link, owner })
-    .then((card) => res.status(CREATED_CODE).send({ data: card }))
-    .catch((err) => {
-      if (err.name === "ValidationError")
-        return res
-          .status(BAD_REQUEST_CODE)
-          .json({ message: "Переданы некорректные данные при создании карточки" });
-      else
-        return res
-          .status(SERVER_ERROR_CODE)
-          .json({ message: "Ошибка по умолчанию." });
+    .then((card) => res.status(constants.HTTP_STATUS_CREATED).send({ data: card }))
+    .catch((error) => {
+      if (error instanceof MongooseError.ValidationError) {
+        return next(
+          new BadRequestError(
+            "Переданы некорректные данные при создании карточки"
+          )
+        );
+      }
+
+      return next(error);
     });
 };
 
-export const likeCard = (req: Request, res: Response<unknown, AuthContext>) => {
-  const userId = res.locals.user._id;
+export const likeCard = (req: Request, res: Response, next: NextFunction) => {
+  const userId = req.params.userId;
   const cardId = req.params.cardId;
 
   return Card.findByIdAndUpdate(
@@ -61,26 +68,33 @@ export const likeCard = (req: Request, res: Response<unknown, AuthContext>) => {
     { $addToSet: { likes: userId } },
     { new: true }
   )
-    .orFail()
+    .orFail(() => new NotFoundError("Карточка не найдена"))
     .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      if (err.name === "ValidationError")
-        return res
-          .status(BAD_REQUEST_CODE)
-          .json({ message: "Переданы некорректные данные для постановки/снятии лайка." });
-      else if (err.name === "DocumentNotFoundError")
-        return res
-          .status(NOT_FOUND_CODE)
-          .json({ message: "Передан несуществующий _id карточки." });
-      else
-        return res
-          .status(SERVER_ERROR_CODE)
-          .json({ message: "Ошибка по умолчанию." });
+    .catch((error) => {
+      if (error instanceof MongooseError.ValidationError) {
+        return next(
+          new BadRequestError(
+            "Переданы некорректные данные для постановки/снятии лайка."
+          )
+        );
+      }
+
+      if (error instanceof MongooseError.CastError) {
+        return next(
+          new BadRequestError("Передан несуществующий _id карточки.")
+        );
+      }
+
+      return next(error);
     });
 };
 
-export const dislikeCard = (req: Request, res: Response<unknown, AuthContext>) => {
-  const userId = res.locals.user._id;
+export const dislikeCard = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const userId = req.params.userId;
   const cardId = req.params.cardId;
 
   return Card.findByIdAndUpdate(
@@ -88,20 +102,23 @@ export const dislikeCard = (req: Request, res: Response<unknown, AuthContext>) =
     { $pull: { likes: userId } },
     { new: true }
   )
-    .orFail()
+    .orFail(() => new NotFoundError("Карточка не найдена"))
     .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      if (err.name === "ValidationError")
-        return res
-          .status(BAD_REQUEST_CODE)
-          .json({ message: "Переданы некорректные данные для постановки/снятии лайка." });
-      else if (err.name === "DocumentNotFoundError")
-        return res
-          .status(NOT_FOUND_CODE)
-          .json({ message: "Передан несуществующий _id карточки." });
-      else
-        return res
-          .status(SERVER_ERROR_CODE)
-          .json({ message: "Ошибка по умолчанию." });
+    .catch((error) => {
+      if (error instanceof MongooseError.ValidationError) {
+        return next(
+          new BadRequestError(
+            "Переданы некорректные данные для постановки/снятии лайка."
+          )
+        );
+      }
+
+      if (error instanceof MongooseError.CastError) {
+        return next(
+          new BadRequestError("Передан несуществующий _id карточки.")
+        );
+      }
+
+      return next(error);
     });
 };

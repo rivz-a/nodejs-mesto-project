@@ -1,27 +1,27 @@
-import { Router } from "express";
-import usersRouter from "./users";
-import cardsRouter from "./cards";
-import { login, createUser } from "../controllers/users";
+import { Router } from 'express';
+import { celebrate, Joi } from 'celebrate';
+import usersRouter from './users';
+import cardsRouter from './cards';
+import { login, createUser } from '../controllers/users';
 
-import NotFoundError from "../errors/not-found-error";
+import NotFoundError from '../errors/not-found-error';
 
-import auth from "../middlewares/auth";
-import { celebrate, Joi } from "celebrate";
+import auth from '../middlewares/auth';
 
 const router = Router();
 
 router.post(
-  "/signin",
+  '/signin',
   celebrate({
     body: Joi.object().keys({
       email: Joi.string().required(),
       password: Joi.string().required(),
     }),
   }),
-  login
+  login,
 );
 router.post(
-  "/signun",
+  '/signun',
   celebrate({
     body: Joi.object().keys({
       email: Joi.string().required(),
@@ -31,16 +31,16 @@ router.post(
       avatar: Joi.string().uri(),
     }),
   }),
-  createUser
+  createUser,
 );
 
 router.use(auth);
 
-router.use("/users", usersRouter);
-router.use("/cards", cardsRouter);
+router.use('/users', usersRouter);
+router.use('/cards', cardsRouter);
 
-router.use("*", (req, res, next) => {
-  next(new NotFoundError({ message: "Not found" }))
+router.use('*', (req, res, next) => {
+  next(new NotFoundError({ message: 'Not found' }));
 });
 
 export default router;

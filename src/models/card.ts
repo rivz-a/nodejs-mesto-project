@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 interface ICard {
   name: string;
@@ -12,30 +12,29 @@ const cardSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Поле name не может быть пустым"],
-      minlength: [2, "Поле name должно быть не менее 2 символов"],
-      maxlength: [30, "Поле name должно быть не более 30 символов"],
+      required: [true, 'Поле name не может быть пустым'],
+      minlength: [2, 'Поле name должно быть не менее 2 символов'],
+      maxlength: [30, 'Поле name должно быть не более 30 символов'],
     },
     link: {
       type: String,
       required: true,
       validate: {
         validator: (v: string) => {
-          const urlRegex =
-            /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/;
+          const urlRegex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/;
 
           return urlRegex.test(v);
         },
-        message: "Некорректный URL",
+        message: 'Некорректный URL',
       },
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: "user",
+      ref: 'user',
     },
     likes: {
-      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'user' }],
       default: [],
     },
     createdAt: {
@@ -46,7 +45,7 @@ const cardSchema = new mongoose.Schema(
   {
     versionKey: false,
     select: false,
-  }
+  },
 );
 
-export default mongoose.model<ICard>("card", cardSchema);
+export default mongoose.model<ICard>('card', cardSchema);

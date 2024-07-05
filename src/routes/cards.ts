@@ -1,53 +1,52 @@
-import { Router } from "express";
+import { Router } from 'express';
+import { celebrate, Joi } from 'celebrate';
 import {
   getAllCards,
   createCard,
   deleteCardById,
   likeCard,
   dislikeCard,
-} from "../controllers/cards";
-
-import { celebrate, Joi } from "celebrate";
+} from '../controllers/cards';
 
 const cardsRouter = Router();
 
-cardsRouter.get("/", getAllCards);
+cardsRouter.get('/', getAllCards);
 cardsRouter.post(
-  "/",
+  '/',
   celebrate({
     body: Joi.object().keys({
       name: Joi.string().min(2).max(30),
       link: Joi.string().uri(),
     }),
   }),
-  createCard
+  createCard,
 );
 cardsRouter.delete(
-  "/:cardId",
+  '/:cardId',
   celebrate({
     params: Joi.object().keys({
       cardId: Joi.string().hex().length(24).required(),
     }),
   }),
-  deleteCardById
+  deleteCardById,
 );
 cardsRouter.put(
-  "/:cardId/likes",
+  '/:cardId/likes',
   celebrate({
     params: Joi.object().keys({
       cardId: Joi.string().hex().length(24).required(),
     }),
   }),
-  likeCard
+  likeCard,
 );
 cardsRouter.delete(
-  "/:cardId/likes",
+  '/:cardId/likes',
   celebrate({
     params: Joi.object().keys({
       cardId: Joi.string().hex().length(24).required(),
     }),
   }),
-  dislikeCard
+  dislikeCard,
 );
 
 export default cardsRouter;

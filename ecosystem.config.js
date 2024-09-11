@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: './.env.deploy' });
 
 const {
-  DEPLOY_USER, DEPLOY_HOST, DEPLOY_PATH, DEPLOY_REPOSITORY, DEPLOY_REF = 'origin/master',
+  DEPLOY_USER, DEPLOY_HOST, DEPLOY_PATH, DEPLOY_REPOSITORY, DEPLOY_REF = 'origin/main',
 } = process.env;
 
 module.exports = {
@@ -21,7 +21,7 @@ module.exports = {
       ref: DEPLOY_REF,
       repo: DEPLOY_REPOSITORY,
       path: DEPLOY_PATH,
-      'pre-deploy': `bash scripts/deployEnv.sh ${DEPLOY_USER}@${DEPLOY_HOST} ${DEPLOY_PATH}`,
+      // 'pre-deploy': `bash scripts/deployEnv.sh ${DEPLOY_USER}@${DEPLOY_HOST} ${DEPLOY_PATH}`,
       'post-deploy': 'pwd && npm ci && npm run build && pm2 startOrRestart ecosystem.config.js --env production',
     },
   },
